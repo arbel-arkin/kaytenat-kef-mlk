@@ -246,6 +246,30 @@ select option { background: var(--box); color: var(--text); }
 }
 .sub-f.vis { display: block; animation: slideDown 0.3s ease-out; }
 
+/* ── Photo publication ── */
+.pub-title {
+  font-family: 'Varela Round', sans-serif;
+  font-size: 1.15rem; font-weight: 400;
+  color: var(--text);
+  padding-top: 14px; margin-bottom: 6px;
+}
+.pub-text { font-size: 0.9rem; line-height: 1.6; color: var(--text); opacity: 0.88; margin-bottom: 14px; }
+.pub-lead { font-size: 0.92rem; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+.pub-box input[type=radio], .pub-choice input[type=radio] {
+  width: 16px; height: 16px; accent-color: var(--text);
+  margin-top: 3px; flex-shrink: 0; cursor: pointer;
+}
+.pub-choices { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.pub-choice {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border); border-radius: 9px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.9rem; color: var(--text);
+  cursor: pointer; transition: border-color .15s;
+}
+.pub-choice:hover, .pub-choice.on { border-color: var(--text); }
+
 /* ── Price summary ── */
 .p-sum {
   background: rgba(255, 255, 255, 0.06);
@@ -483,21 +507,28 @@ select option { background: var(--box); color: var(--text); }
         </div>
 
         <div class="sub-f" id="photo-opts">
-          <p style="font-size:0.87rem;color:var(--text);line-height:1.7;margin-bottom:18px;padding-top:12px;">
-            <strong>אישור לפרסום התמונות</strong> - התמונות יכלו להופיע בפוסטרים שישלחו בקבוצות פייסבוק וואטסאפ של הקהילה.
-          </p>
+          <h3 class="pub-title">אישור לפרסום התמונות</h3>
+          <p class="pub-text">התמונות יוכלו להופיע בפוסטרים של הקייטנה, שיוכלו להישלח בקבוצת Facebook או WhatsApp של הקהילה.</p>
+          <p class="pub-lead">אני מאשר/ת שהתמונות של הבת שלי יוכלו:</p>
           <div style="display:flex;flex-direction:column;gap:10px;">
-            <label class="disc-opt" style="cursor:pointer;padding:14px 16px;" onclick="event.stopPropagation()">
-              <input type="radio" name="photo_usage" value="with_face" style="width:16px;height:16px;accent-color:var(--text);margin-top:3px;flex-shrink:0;">
-              <div style="flex:1;font-size:0.9rem;color:var(--text);line-height:1.5;">אני מאשר/ת שהתמונות של הבת שלי יוכלו לשמש לפרסום הקייטנה, כולל תמונות שבהן מופיעות הפנים שלה.</div>
-            </label>
-            <label class="disc-opt" style="cursor:pointer;padding:14px 16px;" onclick="event.stopPropagation()">
-              <input type="radio" name="photo_usage" value="no_face" style="width:16px;height:16px;accent-color:var(--text);margin-top:3px;flex-shrink:0;">
-              <div style="flex:1;font-size:0.9rem;color:var(--text);line-height:1.5;">אני מאשר/ת שהתמונות של הבת שלי יוכלו לשמש לפרסום הקייטנה, בלי הפנים שלה.</div>
-            </label>
-            <label class="disc-opt" style="cursor:pointer;padding:14px 16px;" onclick="event.stopPropagation()">
-              <input type="radio" name="photo_usage" value="album_only" style="width:16px;height:16px;accent-color:var(--text);margin-top:3px;flex-shrink:0;">
-              <div style="flex:1;font-size:0.9rem;color:var(--text);line-height:1.5;">אני מאשר/ת שתמונות של הבת שלי יהיו באלבום להורים בלבד.</div>
+            <div class="disc-opt pub-box" id="promo-box" style="cursor:default;" onclick="event.stopPropagation()">
+              <div style="flex:1">
+                <div class="opt-title">לשמש לפרסום הקייטנה</div>
+                <div class="pub-choices">
+                  <label class="pub-choice">
+                    <input type="radio" name="photo_usage" value="no_face">
+                    <span>תמונות ללא הפנים שלה</span>
+                  </label>
+                  <label class="pub-choice">
+                    <input type="radio" name="photo_usage" value="with_face">
+                    <span>תמונות עם הפנים שלה</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <label class="disc-opt pub-box" onclick="event.stopPropagation()">
+              <input type="radio" name="photo_usage" value="album_only">
+              <div style="flex:1" class="opt-title">אלבום להורים בלבד</div>
             </label>
           </div>
         </div>
@@ -598,8 +629,11 @@ document.getElementById('photo_cb').addEventListener('change', (e) => {
 
 document.querySelectorAll('[name=photo_usage]').forEach(r => {
   r.addEventListener('change', () => {
-    document.querySelectorAll('[name=photo_usage]').forEach(o => {
-      o.closest('.disc-opt').classList.toggle('on', o.checked);
+    document.querySelectorAll('.pub-box').forEach(box => {
+      box.classList.toggle('on', !!box.querySelector('[name=photo_usage]:checked'));
+    });
+    document.querySelectorAll('.pub-choice').forEach(c => {
+      c.classList.toggle('on', c.querySelector('input').checked);
     });
   });
 });
@@ -626,6 +660,45 @@ document.getElementById('p2check').addEventListener('change', (e) => {
   }
 });
 
+// Builds the submission in the order and wording the email should show.
+function buildEmailData(form) {
+  const v = n => { const f = form.querySelector('[name="' + n + '"]'); return f ? f.value.trim() : ''; };
+  const d = new FormData();
+  d.append('_subject', v('_subject'));
+  d.append('_gotcha', v('_gotcha'));
+
+  d.append('הילדה – שם', v('c1_name'));
+  d.append('הילדה – כיתה', v('c1_grade'));
+  d.append('הילדה – אלרגיות', v('c1_allergy') || '—');
+
+  d.append('הורה – שם', v('parent_name'));
+  d.append('הורה – טלפון', v('phone'));
+  if (v('parent2_name') || v('parent2_phone')) {
+    d.append('הורה נוסף – שם', v('parent2_name') || '—');
+    d.append('הורה נוסף – טלפון', v('parent2_phone') || '—');
+  }
+
+  const sister = form.querySelector('[name=disc_two]').checked;
+  d.append('אחות', sister ? 'כן' : 'לא');
+  if (sister) {
+    d.append('אחות – שם', v('c2_name'));
+    d.append('אחות – כיתה', v('c2_grade') || '—');
+    d.append('אחות – אלרגיות', v('c2_allergy') || '—');
+  }
+
+  const usage = (form.querySelector('[name=photo_usage]:checked') || {}).value;
+  const photos = !form.querySelector('#photo_cb').checked ? 'לא אישרו צילום'
+    : usage === 'with_face' ? 'פרסום עם פנים'
+    : usage === 'no_face'   ? 'פרסום בלי פנים'
+    : usage === 'album_only' ? 'אלבום בלבד'
+    : 'אלבום בלבד (לא נבחרה אפשרות פרסום)';
+  d.append('תמונות', photos);
+
+  d.append('שאלות / עוד משהו', v('notes') || '—');
+  d.append('תשלום', sister ? '$140 ($75 + $65 לאחות)' : '$75');
+  return d;
+}
+
 document.getElementById('form').addEventListener('submit', function(e) {
   e.preventDefault();
   let ok = true;
@@ -641,7 +714,7 @@ document.getElementById('form').addEventListener('submit', function(e) {
 
   fetch(this.action, {
     method: 'POST',
-    body: new FormData(this),
+    body: buildEmailData(this),
     headers: { 'Accept': 'application/json' }
   }).then(r => {
     if (r.ok) {
