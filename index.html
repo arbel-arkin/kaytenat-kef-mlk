@@ -660,6 +660,45 @@ document.getElementById('p2check').addEventListener('change', (e) => {
   }
 });
 
+// Builds the submission in the order and wording the email should show.
+function buildEmailData(form) {
+  const v = n => { const f = form.querySelector('[name="' + n + '"]'); return f ? f.value.trim() : ''; };
+  const d = new FormData();
+  d.append('_subject', v('_subject'));
+  d.append('_gotcha', v('_gotcha'));
+
+  d.append('הילדה – שם', v('c1_name'));
+  d.append('הילדה – כיתה', v('c1_grade'));
+  d.append('הילדה – אלרגיות', v('c1_allergy') || '—');
+
+  d.append('הורה – שם', v('parent_name'));
+  d.append('הורה – טלפון', v('phone'));
+  if (v('parent2_name') || v('parent2_phone')) {
+    d.append('הורה נוסף – שם', v('parent2_name') || '—');
+    d.append('הורה נוסף – טלפון', v('parent2_phone') || '—');
+  }
+
+  const sister = form.querySelector('[name=disc_two]').checked;
+  d.append('אחות', sister ? 'כן' : 'לא');
+  if (sister) {
+    d.append('אחות – שם', v('c2_name'));
+    d.append('אחות – כיתה', v('c2_grade') || '—');
+    d.append('אחות – אלרגיות', v('c2_allergy') || '—');
+  }
+
+  const usage = (form.querySelector('[name=photo_usage]:checked') || {}).value;
+  const photos = !form.querySelector('#photo_cb').checked ? 'לא אישרו צילום'
+    : usage === 'with_face' ? 'פרסום עם פנים'
+    : usage === 'no_face'   ? 'פרסום בלי פנים'
+    : usage === 'album_only' ? 'אלבום בלבד'
+    : 'אלבום בלבד (לא נבחרה אפשרות פרסום)';
+  d.append('תמונות', photos);
+
+  d.append('שאלות / עוד משהו', v('notes') || '—');
+  d.append('תשלום', sister ? '$140 ($75 + $65 לאחות)' : '$75');
+  return d;
+}
+
 document.getElementById('form').addEventListener('submit', function(e) {
   e.preventDefault();
   let ok = true;
@@ -675,7 +714,7 @@ document.getElementById('form').addEventListener('submit', function(e) {
 
   fetch(this.action, {
     method: 'POST',
-    body: new FormData(this),
+    body: buildEmailData(this),
     headers: { 'Accept': 'application/json' }
   }).then(r => {
     if (r.ok) {
